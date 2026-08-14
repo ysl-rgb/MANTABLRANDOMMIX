@@ -1,0 +1,324 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #050208;
+  color: #fff;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", sans-serif;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Stage: full-bleed game surface, sized precisely by app.js (fitCard)
+   for web/app viewports whose ratio isn't exactly 9:16. */
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050208;
+}
+
+.card {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0b0612;
+}
+
+.main-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The artwork has generous safe margins; a slight zoom trims them
+     down so the game feels edge-to-edge on phone-shaped viewports. */
+  transform: scale(1.08);
+}
+
+/* Invisible hit area over the play/pause button already drawn into
+   the artwork. Coordinates measured from the button graphic in 1.png
+   (dead-center horizontally, at 79.36% down, diameter 6.1% of height),
+   then re-projected through the 1.08x zoom above (both scale around
+   the exact center, so this stays aligned regardless of viewport
+   ratio). Sized off height + aspect-ratio so it stays a true circle. */
+.hotspot {
+  position: absolute;
+  left: 50%;
+  bottom: 15%;
+  height: 6.61%;
+  aspect-ratio: 1 / 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 5;
+  overflow: visible;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hotspot:focus,
+.hotspot:focus-visible {
+  outline: none;
+}
+
+/* Tap ripple: transient feedback over the real button graphic. */
+.hotspot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.hotspot.pressed::after {
+  animation: btn-ripple 0.38s ease-out;
+}
+
+@keyframes btn-ripple {
+  0% { opacity: 0.6; transform: scale(0.6); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* Speech-bubble tooltip nudging the user to click */
+.tooltip-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: calc(21.61% + 14px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 6;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip-wrap.show {
+  opacity: 1;
+  animation: tooltip-bounce 1.4s ease-in-out infinite;
+}
+
+.tooltip {
+  background: #fff;
+  color: #1a0b2e;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.tooltip-tail {
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid #fff;
+  margin-top: -1px;
+}
+
+@keyframes tooltip-bounce {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -8px); }
+}
+
+/* Bottom sheet */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 10;
+}
+
+.sheet-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  width: min(430px, 100vw);
+  transform: translate(-50%, 100%);
+  background: linear-gradient(160deg, #2a1250 0%, #170a2b 55%, #0c0616 100%);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 10px 22px calc(28px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.5);
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 11;
+}
+
+.sheet.show {
+  transform: translate(-50%, 0);
+}
+
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  margin: 6px auto 18px;
+}
+
+.sheet-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: #c4b5fd;
+  text-align: center;
+}
+
+.sheet-title {
+  margin: 4px 0 22px;
+  font-size: 21px;
+  font-weight: 800;
+  text-align: center;
+  color: #fff;
+}
+
+.sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 13px 18px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.pill-btn:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.pill-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pill-icon-emoji {
+  font-size: 15px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.pill-label {
+  flex: 1;
+  text-align: left;
+}
+
+.pill-btn-accent {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45);
+}
+
+.pill-btn-accent .pill-icon {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pill-btn-accent:active {
+  background: linear-gradient(135deg, #9333ea, #6d28d9);
+}
+
+/* Toast (save confirmation) */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translate(-50%, 20px);
+  background: rgba(20, 10, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 30;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Confetti burst shown briefly while the picked artwork is revealed,
+   before the bottom sheet slides up. */
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 13px;
+  height: 22px;
+  opacity: 0.95;
+  animation: confetti-burst 3.2s ease-out forwards;
+}
+
+.confetti-piece.from-left {
+  left: -4%;
+}
+
+.confetti-piece.from-right {
+  right: -4%;
+}
+
+@keyframes confetti-burst {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  45% { transform: translate(calc(var(--dx) * 0.72), calc(var(--dy) * 0.6)) rotate(calc(var(--spin) * 0.65)); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--spin)); opacity: 0; }
+}
